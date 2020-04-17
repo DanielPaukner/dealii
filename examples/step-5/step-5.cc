@@ -58,6 +58,9 @@
 #include <map>
 #include <vector>
 
+// Mapping for quad9 elements
+#include <deal.II/fe/mapping_quad9.h>
+
 
 // Finally, this has been discussed in previous tutorial programs before:
 using namespace dealii;
@@ -134,9 +137,14 @@ void Step5<dim>::run()
     QGaussLobatto<dim> quad_GL(3);
 
     // Create mapping
-    MappingQ<dim, spacedim> mapping(1);
+//    MappingQ<dim, spacedim> mapping(1);
 
     MappingQGeneric<dim, spacedim> mapping_generic(2);
+
+    MappingQuad9<dim, spacedim> mapping_quad9(map_in);
+
+    mapping_quad9.print();
+
 
     // Create FEValues (for a single set of FiniteElement, Quadrature, Mapping)
     FEValues<dim, spacedim> fe_values(mapping_generic,
