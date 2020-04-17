@@ -427,6 +427,11 @@ public:
   read_ucd(std::istream &in,
            const bool    apply_all_indicators_to_manifolds = false);
 
+  void
+  read_ucd(std::istream &in,
+		   	     std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
+				 const bool    apply_all_indicators_to_manifolds = false);
+
   /**
    * Read grid data from an Abaqus file. Numerical and constitutive data is
    * ignored. As in the case of the ucd file format, it is possible to use
@@ -493,6 +498,9 @@ public:
    */
   void
   read_msh(std::istream &in);
+
+  void
+  read_msh(std::istream &in, std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
 
   /**
    * Read grid data from a NetCDF file. The only data format currently
@@ -716,6 +724,9 @@ private:
   static void
   skip_comment_lines(std::istream &in, const char comment_start);
 
+
+  static void
+  reorder_support_points(std::vector<Point<spacedim>> &points);
   /**
    * This function does the nasty work (due to very lax conventions and
    * different versions of the tecplot format) of extracting the important
