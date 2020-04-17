@@ -427,6 +427,11 @@ public:
   read_ucd(std::istream &in,
            const bool    apply_all_indicators_to_manifolds = false);
 
+  void
+  read_ucd(std::istream &in,
+		   	     std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
+				 const bool    apply_all_indicators_to_manifolds = false);
+
   /**
    * Read grid data from an Abaqus file. Numerical and constitutive data is
    * ignored. As in the case of the ucd file format, it is possible to use
