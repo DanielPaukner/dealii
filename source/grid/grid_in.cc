@@ -1303,6 +1303,15 @@ GridIn<dim, spacedim>::read_ucd(std::istream &in,
 	    GridReordering<dim, spacedim>::invert_all_cells_of_negative_grid(vertices,
 	                                                                     cells);
 	  GridReordering<dim, spacedim>::reorder_cells(cells);
+
+	  // debug output
+	  // check how vertices are ordered after reordering
+	  std::cout << "Vertices after reordering: " << std::endl;
+	  for(auto &vertex : vertices)
+	  {
+		  std::cout << vertex(0) << " " << vertex(1) << " " << vertex(2) << std::endl;
+	  }
+
 	  tria->create_triangulation_compatibility(vertices, cells, subcelldata);
 
 }

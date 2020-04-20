@@ -60,6 +60,8 @@
 
 // Mapping for quad9 elements
 #include <deal.II/fe/mapping_quad9.h>
+#include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_out.h>
 
 
 // Finally, this has been discussed in previous tutorial programs before:
@@ -115,10 +117,16 @@ void Step5<dim>::run()
 	GridIn<dim, spacedim> grid_in;
     grid_in.attach_triangulation(triangulation);
     std::ifstream input_file("quad9.inp");
+//    std::ifstream input_file("quad4_1.inp");
 
     Assert(dim == 2, ExcInternalError());
 
   	grid_in.read_ucd(input_file, map_in);
+//  	grid_in.read_ucd(input_file);
+
+  	GridOut grid_out;
+  	std::ofstream output_file("quad4.vtk");
+  	grid_out.write_vtk(triangulation, output_file);
 
   	// sanity check to see if all points are in map_in
   	std::vector<Point<spacedim>> test = map_in[0];
@@ -145,24 +153,40 @@ void Step5<dim>::run()
 
     mapping_quad9.print();
 
+    std::vector<Point<spacedim>> test_compute_support_points;
+
 
     // Create FEValues (for a single set of FiniteElement, Quadrature, Mapping)
-    FEValues<dim, spacedim> fe_values(mapping_generic,
+    FEValues<dim, spacedim> fe_values(mapping_quad9,
                             fe,
                             quad_GL,
+							update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
 
 
     // loop over cells in triangulation
     for (auto &cell : triangulation.cell_iterators())
     {
-    	fe_values.reinit(cell);
-    	for (auto &q_point : fe_values.get_quadrature_points())
-        	std::cout << "qp_x: " << q_point[0] << " qp_y: " << q_point[1] << " qp_z: " << q_point[2] << std::endl;
+    	test_compute_support_points = mapping_quad9.compute_mapping_support_points(cell);
 
+//    	for(unsigned int i=0 ; i < 4; ++i)
+//    	{
+//    		std::cout << cell->vertex(i)(0) << " " << cell->vertex(i)(1) << " " << cell->vertex(i)(2) << std::endl;
+//    	}
+
+    	fe_values.reinit(cell);
+//    	for (auto &q_point : fe_values.get_quadrature_points())
+//    	{
+//
+//        	std::cout << "qp_x: " << q_point[0] << " qp_y: " << q_point[1] << " qp_z: " << q_point[2] << std::endl;
+//    	}
     }
 
-
+    std::cout << "Check computed support points: " << std::endl;
+    for(auto &point : test_compute_support_points)
+    {
+    	std::cout << "x: " << point[0] << " y: " << point[1] << " z: " << point[2] << std::endl;
+    }
 
 
 

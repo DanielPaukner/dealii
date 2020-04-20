@@ -4109,6 +4109,13 @@ MappingQGeneric<dim, spacedim>::compute_mapping_support_points(
           }
     }
 
+  // test output
+  std::cout << "Computed mapping support points in Mapping generic!" << std::endl;
+  for(const auto &point : a)
+  {
+	  std::cout << "x: " << point(0) << " y: " << point(1) << " z: " << point(2) << std::endl;
+  }
+
   return a;
 }
 

@@ -74,7 +74,16 @@ public:
     const typename Triangulation<dim, spacedim>::cell_iterator &cell)
     const override;
 
-protected:
+//  std::vector<Point<spacedim>>
+//  get_support_points(unsigned int) const;
+
+  std::map<unsigned int, std::vector<Point<spacedim>>>
+  get_support_points_map() const;
+
+//  std::vector<Point<spacedim>>
+//  get_support_points_for_cell(unsigned int) const;
+
+
   std::map<unsigned int, std::vector<Point<spacedim>>> support_points_map;
 
 
