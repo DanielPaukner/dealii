@@ -116,16 +116,17 @@ void Step5<dim>::run()
 
 	GridIn<dim, spacedim> grid_in;
     grid_in.attach_triangulation(triangulation);
-    std::ifstream input_file("quad9.inp");
-//    std::ifstream input_file("quad4_1.inp");
+    std::ifstream input_file("quad4_2.inp");
+    std::ifstream input_file_msh("quad_1ele.msh");
 
     Assert(dim == 2, ExcInternalError());
 
-  	grid_in.read_ucd(input_file, map_in);
+//  	grid_in.read_ucd(input_file, map_in);
 //  	grid_in.read_ucd(input_file);
+  	grid_in.read_msh(input_file_msh);
 
   	GridOut grid_out;
-  	std::ofstream output_file("quad4.vtk");
+  	std::ofstream output_file("output.vtk");
   	grid_out.write_vtk(triangulation, output_file);
 
   	// sanity check to see if all points are in map_in
@@ -149,15 +150,17 @@ void Step5<dim>::run()
 
     MappingQGeneric<dim, spacedim> mapping_generic(2);
 
-    MappingQuad9<dim, spacedim> mapping_quad9(map_in);
+//    MappingQuad9<dim, spacedim> mapping_quad9(map_in);
 
-    mapping_quad9.print();
+//    mapping_quad9.print();
 
     std::vector<Point<spacedim>> test_compute_support_points;
 
 
     // Create FEValues (for a single set of FiniteElement, Quadrature, Mapping)
-    FEValues<dim, spacedim> fe_values(mapping_quad9,
+    FEValues<dim, spacedim> fe_values(
+//    						mapping_quad9,
+							mapping_generic,
                             fe,
                             quad_GL,
 							update_values | update_gradients |
@@ -167,7 +170,7 @@ void Step5<dim>::run()
     // loop over cells in triangulation
     for (auto &cell : triangulation.cell_iterators())
     {
-    	test_compute_support_points = mapping_quad9.compute_mapping_support_points(cell);
+//    	test_compute_support_points = mapping_quad9.compute_mapping_support_points(cell);
 
 //    	for(unsigned int i=0 ; i < 4; ++i)
 //    	{
@@ -182,11 +185,11 @@ void Step5<dim>::run()
 //    	}
     }
 
-    std::cout << "Check computed support points: " << std::endl;
-    for(auto &point : test_compute_support_points)
-    {
-    	std::cout << "x: " << point[0] << " y: " << point[1] << " z: " << point[2] << std::endl;
-    }
+//    std::cout << "Check computed support points: " << std::endl;
+//    for(auto &point : test_compute_support_points)
+//    {
+//    	std::cout << "x: " << point[0] << " y: " << point[1] << " z: " << point[2] << std::endl;
+//    }
 
 
 
