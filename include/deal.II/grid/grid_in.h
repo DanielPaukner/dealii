@@ -499,6 +499,9 @@ public:
   void
   read_msh(std::istream &in);
 
+  void
+  read_msh(std::istream &in, std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
+
   /**
    * Read grid data from a NetCDF file. The only data format currently
    * supported is the <tt>TAU grid format</tt>.
@@ -721,6 +724,9 @@ private:
   static void
   skip_comment_lines(std::istream &in, const char comment_start);
 
+
+  static void
+  reorder_support_points(std::vector<Point<spacedim>> &points);
   /**
    * This function does the nasty work (due to very lax conventions and
    * different versions of the tecplot format) of extracting the important

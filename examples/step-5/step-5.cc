@@ -117,13 +117,13 @@ void Step5<dim>::run()
 	GridIn<dim, spacedim> grid_in;
     grid_in.attach_triangulation(triangulation);
     std::ifstream input_file("quad4_2.inp");
-    std::ifstream input_file_msh("quad_1ele.msh");
+    std::ifstream input_file_msh("test_quad9_4ele_v2.msh");
 
     Assert(dim == 2, ExcInternalError());
 
 //  	grid_in.read_ucd(input_file, map_in);
 //  	grid_in.read_ucd(input_file);
-  	grid_in.read_msh(input_file_msh);
+  	grid_in.read_msh(input_file_msh, map_in);
 
   	GridOut grid_out;
   	std::ofstream output_file("output.vtk");
@@ -133,6 +133,7 @@ void Step5<dim>::run()
   	std::vector<Point<spacedim>> test = map_in[0];
 
   	// loop
+  	std::cout << "Points in map after reading input file:" << std::endl;
   	for(auto &point : test)
   	{
   		std::cout << point[0] << ", " << point[1] << ", " << point[2] << std::endl;
