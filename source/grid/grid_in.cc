@@ -2632,17 +2632,17 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
     AssertDimension(global_vertex, n_vertices);
   }
 
-  // do some checks to see if all vertices were read properly
-  std::cout << "Length of vertices vector: " << vertices.size() << std::endl;
-  // also print all points and there coordinates
-  for(auto& vertex : vertices)
-  {
-	  std::cout << "x: " << vertex(0) << " y: " << vertex(1) << " z: " << vertex(2) << std::endl;
-  }
-
-  // check whats written in vertex_indices (map)
-  for(unsigned int i = 0; i < vertex_indices.size(); i++)
-	  std::cout << "vertex_indices(" << i << "): " << vertex_indices[i] << std::endl;
+//  // do some checks to see if all vertices were read properly
+//  std::cout << "Length of vertices vector: " << vertices.size() << std::endl;
+//  // also print all points and there coordinates
+//  for(auto& vertex : vertices)
+//  {
+//	  std::cout << "x: " << vertex(0) << " y: " << vertex(1) << " z: " << vertex(2) << std::endl;
+//  }
+//
+//  // check whats written in vertex_indices (map)
+//  for(unsigned int i = 0; i < vertex_indices.size(); i++)
+//	  std::cout << "vertex_indices(" << i << "): " << vertex_indices[i] << std::endl;
 
 
   // Assert we reached the end of the block
@@ -2674,8 +2674,8 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
       in >> n_cells;
     }
 
-  // DEBUG
-  std::cout << "Number of cells: " << n_cells << std::endl;
+//  // DEBUG
+//  std::cout << "Number of cells: " << n_cells << std::endl;
 
   // set up array of cells and subcells (faces). In 1d, there is currently no
   // standard way in deal.II to pass boundary indicators attached to individual
@@ -2711,8 +2711,6 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
             in >> dimEntity >> tagEntity >> cell_type >> numElements;
             material_id = tag_maps[dimEntity][tagEntity];
           }
-
-        std::cout << "Cell type: " << cell_type << std::endl;
 
         for (unsigned int cell_per_entity = 0; cell_per_entity < numElements;
              ++cell_per_entity, ++global_cell)
@@ -2793,6 +2791,9 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
 
                      `5'
                      Hexahedron (8 nodes, 12 edges, 6 faces).
+
+                     `10'
+                     quadratic Quadrangle (9 nodes, 4 edges).
 
                      `15'
                      Point (1 node).
@@ -2974,13 +2975,13 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
                   }
                 }
 
-                // check of cell has the correct indices
-                for (unsigned int i = 0 ; i < 4; i++)
-                	std::cout << "cells.back().vertices[i]: " << cells.back().vertices[i] << std::endl;
-
-                // check of support_points_indices holds the correct indices
-                for (auto & index : support_points_indices)
-                	std::cout << "support_points_index: " << index << std::endl;
+//                // check of cell has the correct indices
+//                for (unsigned int i = 0 ; i < 4; i++)
+//                	std::cout << "cells.back().vertices[i]: " << cells.back().vertices[i] << std::endl;
+//
+//                // check of support_points_indices holds the correct indices
+//                for (auto & index : support_points_indices)
+//                	std::cout << "support_points_index: " << index << std::endl;
 
 
                 // to make sure that the cast won't fail
@@ -3020,7 +3021,9 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
                 // ways of counting. (staring from 1 in the input file vs. starting
                 // from 0 in the code
 
+                // number of support points always 5 for a quad9 element
                 unsigned int num_support_points = 5;
+
                 for (unsigned int i = 0; i < num_support_points; ++i)
                 {
                     AssertThrow(
@@ -3035,15 +3038,14 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
                       vertex_indices[support_points_indices[i]];
                 }
 
-
-                std::cout << "After reordering..." << std::endl;
-                // check of cell has the correct indices
-                for (unsigned int i = 0 ; i < 4; i++)
-                	std::cout << "cells.back().vertices[i]: " << cells.back().vertices[i] << std::endl;
-
-                // check of support_points_indices holds the correct indices
-                for (auto & index : support_points_indices)
-                	std::cout << "support_points_index: " << index << std::endl;
+//                std::cout << "After reordering..." << std::endl;
+//                // check of cell has the correct indices
+//                for (unsigned int i = 0 ; i < 4; i++)
+//                	std::cout << "cells.back().vertices[i]: " << cells.back().vertices[i] << std::endl;
+//
+//                // check of support_points_indices holds the correct indices
+//                for (auto & index : support_points_indices)
+//                	std::cout << "support_points_index: " << index << std::endl;
 
                 // Now we have the indices of the support points, but we need the actual
                 // points. So we go through the vector that holds all the vertices and
@@ -3055,13 +3057,13 @@ GridIn<dim, spacedim>::read_msh(std::istream &in, std::map<unsigned int, std::ve
                  for (unsigned int i = 0; i < num_support_points; ++i)
                 	temp_points.emplace_back(vertices[support_points_indices[i]]);
 
-                // Check if the correct points are in temp_points
-                for (auto& point : temp_points)
-                {
-                	for (unsigned int i = 0; i < spacedim; ++i)
-                		std::cout << point(i) << " ";
-                	std::cout << std::endl;
-                }
+//                // Check if the correct points are in temp_points
+//                for (auto& point : temp_points)
+//                {
+//                	for (unsigned int i = 0; i < spacedim; ++i)
+//                		std::cout << point(i) << " ";
+//                	std::cout << std::endl;
+//                }
 
                 // reorder the points to match the deal.II ordering scheme
                 reorder_support_points(temp_points);
@@ -4305,14 +4307,7 @@ template <int dim, int spacedim>
 void
 GridIn<dim, spacedim>::reorder_support_points(std::vector<Point<spacedim>> &points)
 {
-	// Reorder the support points to match the deal.II numbering scheme
-	// first x, then y, then z.
-	// First, find lowest x value, then highest x value.
-	// Then lowest y value and then highest y value.
-	// Then lowest z value and then hihgest z value.
-	// At the end there should be one point left which
-	// is the central point.
-
+	// New way of handling the ordering:
 	// Is there a fixed mapping between gmsh input file
 	// and deal.II ordering of vertices? Maybe...needs
 	// further checks, especially in 3d
@@ -4321,7 +4316,21 @@ GridIn<dim, spacedim>::reorder_support_points(std::vector<Point<spacedim>> &poin
 	// order. Example: mapping[0] = 2, i.e. the first entry of
 	// points should be the 6th (the 4 vertices + 2), the
 	// second entry the 5th (4 vertices + 1)
-	std::vector<unsigned int> mapping = {2, 1, 3, 0, 4};
+
+	// mapping depends on dimension
+	// does mapping also depend on if geometry is in x-y-plane,
+	// x-z-plane or y-z-plane?
+	std::vector<unsigned int> mapping(points.size());
+	if (dim == 2)
+		mapping = {2, 1, 3, 0, 4};
+	else if (dim == 3)
+	{
+		Assert(false, ExcNotImplemented());
+	}
+	else
+	{
+		Assert(false, ExcNotImplemented());
+	}
 
 	// vector holding the sorted points
 	std::vector<Point<spacedim>> sorted_points(points.size());
@@ -4331,7 +4340,17 @@ GridIn<dim, spacedim>::reorder_support_points(std::vector<Point<spacedim>> &poin
 	for(unsigned int i = 0; i < points.size(); ++i)
 		sorted_points[mapping[i]] = points[i];
 
-//
+	// and now copy the sorted points back into points
+	points = sorted_points;
+
+	// Reorder the support points to match the deal.II numbering scheme
+	// first x, then y, then z.
+	// First, find lowest x value, then highest x value.
+	// Then lowest y value and then highest y value.
+	// Then lowest z value and then hihgest z value.
+	// At the end there should be one point left which
+	// is the central point.
+
 //	// loop over all directions
 //	for (unsigned int direction = 0; direction < dim; ++direction)
 //	{
@@ -4361,10 +4380,8 @@ GridIn<dim, spacedim>::reorder_support_points(std::vector<Point<spacedim>> &poin
 //	// add central point at the end
 //	sorted_points.back() = points.back();
 
-	// and now copy the sorted points back into points
-	points = sorted_points;
-
-	std::cout << "Reordered support points!" << std::endl;
+//	// and now copy the sorted points back into points
+//	points = sorted_points;
 }
 
 

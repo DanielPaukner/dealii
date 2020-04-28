@@ -133,11 +133,11 @@ void Step5<dim>::run()
   	std::vector<Point<spacedim>> test = map_in[0];
 
   	// loop
-  	std::cout << "Points in map after reading input file:" << std::endl;
-  	for(auto &point : test)
-  	{
-  		std::cout << point[0] << ", " << point[1] << ", " << point[2] << std::endl;
-  	}
+//  	std::cout << "Points in map after reading input file:" << std::endl;
+//  	for(auto &point : test)
+//  	{
+//  		std::cout << point[0] << ", " << point[1] << ", " << point[2] << std::endl;
+//  	}
 
     // Create finite element
     FE_Q<dim,spacedim> fe(1);
