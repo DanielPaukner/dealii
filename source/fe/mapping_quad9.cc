@@ -38,16 +38,18 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <memory>
 #include <iostream>
+#include <memory>
 
 DEAL_II_NAMESPACE_OPEN
 
 
 
 template <int dim, int spacedim>
-MappingQuad9<dim, spacedim>::MappingQuad9(std::map<unsigned int, std::vector<Point<spacedim>>> &map_in)
-  : MappingQGeneric<dim, spacedim>(2),	support_points_map(map_in)
+MappingQuad9<dim, spacedim>::MappingQuad9(
+  std::map<unsigned int, std::vector<Point<spacedim>>> &map_in)
+  : MappingQGeneric<dim, spacedim>(2)
+  , support_points_map(map_in)
 {
   std::cout << "Constructed MappingQuad9!" << std::endl;
 }
@@ -63,8 +65,8 @@ template <int dim, int spacedim>
 void
 MappingQuad9<dim, spacedim>::print()
 {
-    // TODO: do we need this
-	std::cout << "MappingQuad9 exists!" << std::endl;
+  // TODO: do we need this
+  std::cout << "MappingQuad9 exists!" << std::endl;
 }
 template <int dim, int spacedim>
 std::vector<Point<spacedim>>
@@ -74,22 +76,25 @@ MappingQuad9<dim, spacedim>::compute_mapping_support_points(
   // number of total points is 9 (3^2) for quad9 element
   // and 27 (3^3) for hex27 element
   const unsigned int num_points = Utilities::pow(3, dim);
-  
+
   std::vector<Point<spacedim>> result(num_points);
-  
-  const auto & vertices = this->get_vertices(cell);
+
+  const auto &vertices = this->get_vertices(cell);
 
   for (const unsigned int i : GeometryInfo<dim>::vertex_indices())
     result[i] = vertices[i];
 
   // get vector with points for current cell
-  const std::vector<Point<spacedim>> & sup_points = support_points_map.at(cell->active_cell_index());
-  
+  const std::vector<Point<spacedim>> &sup_points =
+    support_points_map.at(cell->active_cell_index());
+
   // just copy the points you need, i.e. index 4 to 8
   // this is done to get the correct ordering of the first
   // four vertice which make up the actual cell in the triangulation
-  for (unsigned int i = 0; i < num_points - GeometryInfo<dim>::vertices_per_cell; ++i)
-	result[i + GeometryInfo<dim>::vertices_per_cell] = sup_points[i];
+  for (unsigned int i = 0;
+       i < num_points - GeometryInfo<dim>::vertices_per_cell;
+       ++i)
+    result[i + GeometryInfo<dim>::vertices_per_cell] = sup_points[i];
 
   return result;
 }

@@ -428,9 +428,9 @@ public:
            const bool    apply_all_indicators_to_manifolds = false);
 
   void
-  read_ucd(std::istream &in,
-		   	     std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
-				 const bool    apply_all_indicators_to_manifolds = false);
+  read_ucd(std::istream &                                        in,
+           std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
+           const bool apply_all_indicators_to_manifolds = false);
 
   /**
    * Read grid data from an Abaqus file. Numerical and constitutive data is
@@ -500,7 +500,8 @@ public:
   read_msh(std::istream &in);
 
   void
-  read_msh(std::istream &in, std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
+  read_msh(std::istream &                                        in,
+           std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
 
   /**
    * Read grid data from a NetCDF file. The only data format currently

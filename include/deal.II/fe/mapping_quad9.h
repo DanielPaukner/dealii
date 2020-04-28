@@ -34,9 +34,10 @@ public:
   virtual std::unique_ptr<Mapping<dim, spacedim>>
   clone() const override;
 
-  void print();
+  void
+  print();
 
-  private:
+private:
   virtual std::vector<Point<spacedim>>
   compute_mapping_support_points(
     const typename Triangulation<dim, spacedim>::cell_iterator &cell)
