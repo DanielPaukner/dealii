@@ -500,8 +500,8 @@ public:
   read_msh(std::istream &in);
 
   void
-  read_msh(std::istream &                                        in,
-           std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
+  read_msh(std::istream &in,
+		   std::vector<std::vector<Point<spacedim>>> &support_points);
 
   /**
    * Read grid data from a NetCDF file. The only data format currently

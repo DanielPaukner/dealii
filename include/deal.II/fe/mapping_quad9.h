@@ -29,13 +29,11 @@ template <int dim, int spacedim = dim>
 class MappingQuad9 : public MappingQGeneric<dim, spacedim>
 {
 public:
-  MappingQuad9(std::map<unsigned int, std::vector<Point<spacedim>>> &map_in);
+  MappingQuad9(std::vector<std::vector<Point<spacedim>>> &support_points);
 
   virtual std::unique_ptr<Mapping<dim, spacedim>>
   clone() const override;
 
-  void
-  print();
 
 private:
   virtual std::vector<Point<spacedim>>
@@ -43,7 +41,7 @@ private:
     const typename Triangulation<dim, spacedim>::cell_iterator &cell)
     const override;
 
-  std::map<unsigned int, std::vector<Point<spacedim>>> support_points_map;
+  std::vector<std::vector<Point<spacedim>>> support_points;
 };
 
 DEAL_II_NAMESPACE_CLOSE
