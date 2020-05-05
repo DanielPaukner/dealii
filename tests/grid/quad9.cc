@@ -25,6 +25,8 @@
 
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/tria.h>
+// testing
+#include <deal.II/grid/grid_out.h>
 
 #include <istream>
 #include <string>
@@ -40,6 +42,7 @@ check_file(const std::string file_name)
   gi.attach_triangulation(tria);
 
   std::map<unsigned int, std::vector<Point<spacedim>>> map;
+  std::vector<std::vector<Point<spacedim>>> support_points;
 
   std::filebuf fb;
   if (fb.open(file_name, std::ios::in))
@@ -48,15 +51,20 @@ check_file(const std::string file_name)
       std::string  file_ending =
         file_name.substr(file_name.find_last_of(".") + 1);
       if (file_ending == "msh")
-        gi.read_msh(is, map);
+        gi.read_msh(is, support_points);
       else if (file_ending == "inp")
         gi.read_ucd(is, map, false);
       else
         AssertThrow(false, ExcNotImplemented());
     }
 
+  // testing to see if ordering of the nodes is correct
+  GridOut go;
+  std::ofstream output_file("output.vtk");
+  GridOut().write_vtk(tria, output_file);
+
   MappingQGeneric<dim, spacedim> mapping_1(1);
-  MappingQuad9<dim, spacedim>    mapping_2(map);
+  MappingQuad9<dim, spacedim>    mapping_2(support_points);
 
   QGaussLobatto<dim> quad_1(2);
   QGaussLobatto<dim> quad_2(3);
