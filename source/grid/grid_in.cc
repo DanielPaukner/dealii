@@ -1385,10 +1385,20 @@ GridIn<3>::read_xda(std::istream &in)
 }
 
 
-
 template <int dim, int spacedim>
 void
 GridIn<dim, spacedim>::read_msh(std::istream &in)
+{
+  std::vector<std::vector<Point<spacedim>>> dummy;
+  read_msh(in, dummy);
+}
+
+
+template <int dim, int spacedim>
+void
+GridIn<dim, spacedim>::read_msh(
+  std::istream & in,
+  std::vector<std::vector<Point<spacedim>>> &support_points)
 {
   Assert(tria != nullptr, ExcNoTriangulationSelected());
   AssertThrow(in, ExcIO());
@@ -1809,6 +1819,12 @@ GridIn<dim, spacedim>::read_msh(std::istream &in)
                      `5'
                      Hexahedron (8 nodes, 12 edges, 6 faces).
 
+                     `10'
+                     quadratic Quadrangle (9 nodes, 4 edges).
+
+                     `12'
+                     quadratic Hexahedron (27 nodes, 12 edges, 6 faces).
+
                      `15'
                      Point (1 node).
             */
@@ -1954,6 +1970,119 @@ GridIn<dim, spacedim>::read_msh(std::istream &in)
                 if (dim == 1)
                   boundary_ids_1d[vertex_indices[node_index]] = material_id;
               }
+            else if ((cell_type == 10 && dim == 2) ||
+            		 (cell_type == 12 && dim == 3))
+              {
+                AssertThrow(nod_num == GeometryInfo<dim>::vertices_per_cell,
+                            ExcMessage(
+                              "Number of nodes does not coincide with the "
+                              "number required for this object"));
+
+                // allocate and read indices
+                cells.emplace_back();
+
+                // create temporary vector to hold the indices of the support
+                // points
+                std::vector<unsigned int> support_points_indices;
+
+                // instead of looping over GeometryInfo<dim>::vertex_indices()
+                // we over all the points. However, only
+                // the first GeometryInfo<dim>::vertices_per_cell are added for
+                // the cell and the others are added
+                // to a vector holding the temporary support points which is
+                // then copied to map_in. This way, the map only holds the
+                // support points associated with a cell.
+
+                // depending on 2d or 3d the total number of vertices
+                // per cell is determined
+                const unsigned int total_num_vertices_per_cell = std::pow(3, dim);
+
+                for (unsigned int i = 0; i < total_num_vertices_per_cell; ++i)
+                  {
+                    if (i < GeometryInfo<dim>::vertices_per_cell)
+                      in >> cells.back().vertices[i];
+                    else
+                      {
+                        unsigned int temp_index = 0;
+                        in >> temp_index;
+                        support_points_indices.emplace_back(temp_index);
+                      }
+                  }
+
+                // to make sure that the cast won't fail
+                Assert(material_id <=
+                         std::numeric_limits<types::material_id>::max(),
+                       ExcIndexRange(
+                         material_id,
+                         0,
+                         std::numeric_limits<types::material_id>::max()));
+                // we use only material_ids in the range from 0 to
+                // numbers::invalid_material_id-1
+                AssertIndexRange(material_id, numbers::invalid_material_id);
+
+                cells.back().material_id =
+                  static_cast<types::material_id>(material_id);
+
+                // transform from ucd to
+                // consecutive numbering
+                for (const unsigned int i : GeometryInfo<dim>::vertex_indices())
+                  {
+                    AssertThrow(
+                      vertex_indices.find(cells.back().vertices[i]) !=
+                        vertex_indices.end(),
+                      ExcInvalidVertexIndexGmsh(cell_per_entity,
+                                                elm_number,
+                                                cells.back().vertices[i]));
+
+                    // vertex with this index exists
+                    cells.back().vertices[i] =
+                      vertex_indices[cells.back().vertices[i]];
+                  }
+
+                // number of support points is total total number of vertices per
+                // cell minus the actual vertices, i.e. 5 for quad9 and 19 for hex27
+                unsigned int num_support_points =
+                		total_num_vertices_per_cell - GeometryInfo<dim>::vertices_per_cell;
+                for (unsigned int i = 0; i < num_support_points; ++i)
+                  {
+                    AssertThrow(
+                      vertex_indices.find(support_points_indices[i]) !=
+                        vertex_indices.end(),
+                      ExcInvalidVertexIndexGmsh(cell_per_entity,
+                                                elm_number,
+                                                support_points_indices[i]));
+
+                    // vertex with this index exists
+                    support_points_indices[i] =
+                      vertex_indices[support_points_indices[i]];
+                  }
+
+                // Now we have the indices of the support points, but we need
+                // the actual points. So we go through the vector that holds all
+                // the vertices and find the coordinates of the point associated
+                // with a particular index. Once we found it, we add it to a
+                // temporary vector which is then reordered and stored in
+                // map_in.
+
+                std::vector<Point<spacedim>> temp_points;
+                for (unsigned int i = 0; i < num_support_points; ++i)
+                  temp_points.emplace_back(vertices[support_points_indices[i]]);
+
+                // reorder the points to match the deal.II ordering scheme
+                reorder_support_points(temp_points);
+
+                // Now store the temp_points vector which contains the support
+                // points of the current cell in the overall support points
+                // vector
+                support_points.emplace_back(temp_points);
+
+              }
+            else if (cell_type == 10 && dim == 3)
+                // boundary info
+                {
+            		// TODO is that necessary at all?
+                	Assert(false, ExcNotImplemented());
+                }
             else
               // cannot read this, so throw
               // an exception. treat
@@ -2007,7 +2136,6 @@ GridIn<dim, spacedim>::read_msh(std::istream &in)
   if (dim == 1)
     assign_1d_boundary_ids(boundary_ids_1d, *tria);
 }
-
 
 template <>
 void
@@ -3169,6 +3297,47 @@ GridIn<dim, spacedim>::skip_comment_lines(std::istream &in,
   skip_empty_lines(in);
 }
 
+namespace
+{
+  template <int dim, int spacedim>
+  void
+  reorder_support_points(
+    std::vector<Point<spacedim>> &points)
+  {
+	// New way of handling the ordering:
+	// Is there a fixed mapping between gmsh input file
+	// and deal.II ordering of vertices? Maybe...needs
+	// further checks, especially in 3d
+
+	// This would be the reordering of the points into the deall.II
+	// order. Example: mapping[0] = 2, i.e. the first entry of
+	// points should be the 6th (the 4 vertices + 2), the
+	// second entry the 5th (4 vertices + 1)
+
+	// mapping depends on dimension
+	// does mapping also depend on if geometry is in x-y-plane,
+	// x-z-plane or y-z-plane?
+	std::vector<unsigned int> mapping(points.size());
+
+	if (points.size() == 5)
+		mapping = {2, 1, 3, 0, 4};
+	else if (points.size() == 19)
+		mapping = {3, 10, 0, 11, 1, 7, 5, 4, 2, 8, 9, 6, 15, 16, 12, 13, 17, 14, 18};
+	else
+		Assert(false, ExcNotImplemented());
+
+	// vector holding the sorted points
+	std::vector<Point<spacedim>> sorted_points(points.size());
+
+	// now loop over the number of entries in points and
+	// distribute to the correct position in sorted_points
+	for (unsigned int i = 0; i < points.size(); ++i)
+		sorted_points[mapping[i]] = points[i];
+
+	// and now copy the sorted points back into points
+	points = sorted_points;
+  }
+} namespace
 
 
 template <int dim, int spacedim>
