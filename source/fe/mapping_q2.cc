@@ -28,7 +28,7 @@
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/mapping_quad9.h>
+#include <deal.II/fe/mapping_q2.h>
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -46,7 +46,7 @@ DEAL_II_NAMESPACE_OPEN
 
 
 template <int dim, int spacedim>
-MappingQuad9<dim, spacedim>::MappingQuad9(
+MappingQ2<dim, spacedim>::MappingQ2(
 	std::vector<std::vector<Point<spacedim>>> &support_points)
   : MappingQGeneric<dim, spacedim>(2)
   , support_points(support_points)
@@ -55,17 +55,20 @@ MappingQuad9<dim, spacedim>::MappingQuad9(
 
 template <int dim, int spacedim>
 std::unique_ptr<Mapping<dim, spacedim>>
-MappingQuad9<dim, spacedim>::clone() const
+MappingQ2<dim, spacedim>::clone() const
 {
-  return std_cxx14::make_unique<MappingQuad9<dim, spacedim>>(*this);
+  return std_cxx14::make_unique<MappingQ2<dim, spacedim>>(*this);
 }
 
 
 template <int dim, int spacedim>
 std::vector<Point<spacedim>>
-MappingQuad9<dim, spacedim>::compute_mapping_support_points(
+MappingQ2<dim, spacedim>::compute_mapping_support_points(
   const typename Triangulation<dim, spacedim>::cell_iterator &cell) const
 {
+  // check if level is 0
+	Assert(cell->level() != 0, ExcInternalError());
+
   // number of total points is 9 (3^2) for quad9 element
   // and 27 (3^3) for hex27 element
   const unsigned int num_points = Utilities::pow(3, dim);
@@ -81,7 +84,7 @@ MappingQuad9<dim, spacedim>::compute_mapping_support_points(
   const std::vector<Point<spacedim>> &sup_points =
     support_points[cell->active_cell_index()];
 
-  // just copy the points you need, i.e. index 4 to 8
+  // just copy the points you need
   // this is done to get the correct ordering of the first
   // four vertice which make up the actual cell in the triangulation
   for (unsigned int i = 0;
@@ -93,7 +96,7 @@ MappingQuad9<dim, spacedim>::compute_mapping_support_points(
 
 
 //--------------------------- Explicit instantiations -----------------------
-#include "mapping_quad9.inst"
+#include "mapping_q2.inst"
 
 
 DEAL_II_NAMESPACE_CLOSE

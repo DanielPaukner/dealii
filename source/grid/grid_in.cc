@@ -1737,630 +1737,12 @@ GridIn<dim, spacedim>::read_msh(std::istream &in)
 	std::vector<std::vector<Point<spacedim>>> dummy;
 	read_msh(in, dummy);
 }
-//{
-//  Assert(tria != nullptr, ExcNoTriangulationSelected());
-//  AssertThrow(in, ExcIO());
-//
-//  unsigned int n_vertices;
-//  unsigned int n_cells;
-//  unsigned int dummy;
-//  std::string  line;
-//  // This array stores maps from the 'entities' to the 'physical tags' for
-//  // points, curves, surfaces and volumes. We use this information later to
-//  // assign boundary ids.
-//  std::array<std::map<int, int>, 4> tag_maps;
-//
-//  in >> line;
-//
-//  // first determine file format
-//  unsigned int gmsh_file_format = 0;
-//  if (line == "$NOD")
-//    gmsh_file_format = 10;
-//  else if (line == "$MeshFormat")
-//    gmsh_file_format = 20;
-//  else
-//    AssertThrow(false, ExcInvalidGMSHInput(line));
-//
-//  // if file format is 2.0 or greater then we also have to read the rest of the
-//  // header
-//  if (gmsh_file_format == 20)
-//    {
-//      double       version;
-//      unsigned int file_type, data_size;
-//
-//      in >> version >> file_type >> data_size;
-//
-//      Assert((version >= 2.0) && (version <= 4.1), ExcNotImplemented());
-//      gmsh_file_format = static_cast<unsigned int>(version * 10);
-//
-//      Assert(file_type == 0, ExcNotImplemented());
-//      Assert(data_size == sizeof(double), ExcNotImplemented());
-//
-//      // read the end of the header and the first line of the nodes description
-//      // to synch ourselves with the format 1 handling above
-//      in >> line;
-//      AssertThrow(line == "$EndMeshFormat", ExcInvalidGMSHInput(line));
-//
-//      in >> line;
-//      // if the next block is of kind $PhysicalNames, ignore it
-//      if (line == "$PhysicalNames")
-//        {
-//          do
-//            {
-//              in >> line;
-//            }
-//          while (line != "$EndPhysicalNames");
-//          in >> line;
-//        }
-//
-//      // if the next block is of kind $Entities, parse it
-//      if (line == "$Entities")
-//        {
-//          unsigned long n_points, n_curves, n_surfaces, n_volumes;
-//
-//          in >> n_points >> n_curves >> n_surfaces >> n_volumes;
-//          for (unsigned int i = 0; i < n_points; ++i)
-//            {
-//              // parse point ids
-//              int          tag;
-//              unsigned int n_physicals;
-//              double box_min_x, box_min_y, box_min_z, box_max_x, box_max_y,
-//                box_max_z;
-//
-//              // we only care for 'tag' as key for tag_maps[0]
-//              if (gmsh_file_format > 40)
-//                {
-//                  in >> tag >> box_min_x >> box_min_y >> box_min_z >>
-//                    n_physicals;
-//                  box_max_x = box_min_x;
-//                  box_max_y = box_min_y;
-//                  box_max_z = box_min_z;
-//                }
-//              else
-//                {
-//                  in >> tag >> box_min_x >> box_min_y >> box_min_z >>
-//                    box_max_x >> box_max_y >> box_max_z >> n_physicals;
-//                }
-//              // if there is a physical tag, we will use it as boundary id below
-//              AssertThrow(n_physicals < 2,
-//                          ExcMessage("More than one tag is not supported!"));
-//              // if there is no physical tag, use 0 as default
-//              int physical_tag = 0;
-//              for (unsigned int j = 0; j < n_physicals; ++j)
-//                in >> physical_tag;
-//              tag_maps[0][tag] = physical_tag;
-//            }
-//          for (unsigned int i = 0; i < n_curves; ++i)
-//            {
-//              // parse curve ids
-//              int          tag;
-//              unsigned int n_physicals;
-//              double box_min_x, box_min_y, box_min_z, box_max_x, box_max_y,
-//                box_max_z;
-//
-//              // we only care for 'tag' as key for tag_maps[1]
-//              in >> tag >> box_min_x >> box_min_y >> box_min_z >> box_max_x >>
-//                box_max_y >> box_max_z >> n_physicals;
-//              // if there is a physical tag, we will use it as boundary id below
-//              AssertThrow(n_physicals < 2,
-//                          ExcMessage("More than one tag is not supported!"));
-//              // if there is no physical tag, use 0 as default
-//              int physical_tag = 0;
-//              for (unsigned int j = 0; j < n_physicals; ++j)
-//                in >> physical_tag;
-//              tag_maps[1][tag] = physical_tag;
-//              // we don't care about the points associated to a curve, but have
-//              // to parse them anyway because their format is unstructured
-//              in >> n_points;
-//              for (unsigned int j = 0; j < n_points; ++j)
-//                in >> tag;
-//            }
-//
-//          for (unsigned int i = 0; i < n_surfaces; ++i)
-//            {
-//              // parse surface ids
-//              int          tag;
-//              unsigned int n_physicals;
-//              double box_min_x, box_min_y, box_min_z, box_max_x, box_max_y,
-//                box_max_z;
-//
-//              // we only care for 'tag' as key for tag_maps[2]
-//              in >> tag >> box_min_x >> box_min_y >> box_min_z >> box_max_x >>
-//                box_max_y >> box_max_z >> n_physicals;
-//              // if there is a physical tag, we will use it as boundary id below
-//              AssertThrow(n_physicals < 2,
-//                          ExcMessage("More than one tag is not supported!"));
-//              // if there is no physical tag, use 0 as default
-//              int physical_tag = 0;
-//              for (unsigned int j = 0; j < n_physicals; ++j)
-//                in >> physical_tag;
-//              tag_maps[2][tag] = physical_tag;
-//              // we don't care about the curves associated to a surface, but
-//              // have to parse them anyway because their format is unstructured
-//              in >> n_curves;
-//              for (unsigned int j = 0; j < n_curves; ++j)
-//                in >> tag;
-//            }
-//          for (unsigned int i = 0; i < n_volumes; ++i)
-//            {
-//              // parse volume ids
-//              int          tag;
-//              unsigned int n_physicals;
-//              double box_min_x, box_min_y, box_min_z, box_max_x, box_max_y,
-//                box_max_z;
-//
-//              // we only care for 'tag' as key for tag_maps[3]
-//              in >> tag >> box_min_x >> box_min_y >> box_min_z >> box_max_x >>
-//                box_max_y >> box_max_z >> n_physicals;
-//              // if there is a physical tag, we will use it as boundary id below
-//              AssertThrow(n_physicals < 2,
-//                          ExcMessage("More than one tag is not supported!"));
-//              // if there is no physical tag, use 0 as default
-//              int physical_tag = 0;
-//              for (unsigned int j = 0; j < n_physicals; ++j)
-//                in >> physical_tag;
-//              tag_maps[3][tag] = physical_tag;
-//              // we don't care about the surfaces associated to a volume, but
-//              // have to parse them anyway because their format is unstructured
-//              in >> n_surfaces;
-//              for (unsigned int j = 0; j < n_surfaces; ++j)
-//                in >> tag;
-//            }
-//          in >> line;
-//          AssertThrow(line == "$EndEntities", ExcInvalidGMSHInput(line));
-//          in >> line;
-//        }
-//
-//      // if the next block is of kind $PartitionedEntities, ignore it
-//      if (line == "$PartitionedEntities")
-//        {
-//          do
-//            {
-//              in >> line;
-//            }
-//          while (line != "$EndPartitionedEntities");
-//          in >> line;
-//        }
-//
-//      // but the next thing should,
-//      // in any case, be the list of
-//      // nodes:
-//      AssertThrow(line == "$Nodes", ExcInvalidGMSHInput(line));
-//    }
-//
-//  // now read the nodes list
-//  int n_entity_blocks = 1;
-//  if (gmsh_file_format > 40)
-//    {
-//      int min_node_tag;
-//      int max_node_tag;
-//      in >> n_entity_blocks >> n_vertices >> min_node_tag >> max_node_tag;
-//    }
-//  else if (gmsh_file_format == 40)
-//    {
-//      in >> n_entity_blocks >> n_vertices;
-//    }
-//  else
-//    in >> n_vertices;
-//  std::vector<Point<spacedim>> vertices(n_vertices);
-//  // set up mapping between numbering
-//  // in msh-file (nod) and in the
-//  // vertices vector
-//  std::map<int, int> vertex_indices;
-//
-//  {
-//    unsigned int global_vertex = 0;
-//    for (int entity_block = 0; entity_block < n_entity_blocks; ++entity_block)
-//      {
-//        int           parametric;
-//        unsigned long numNodes;
-//
-//        if (gmsh_file_format < 40)
-//          {
-//            numNodes   = n_vertices;
-//            parametric = 0;
-//          }
-//        else
-//          {
-//            // for gmsh_file_format 4.1 the order of tag and dim is reversed,
-//            // but we are ignoring both anyway.
-//            int tagEntity, dimEntity;
-//            in >> tagEntity >> dimEntity >> parametric >> numNodes;
-//          }
-//
-//        std::vector<int> vertex_numbers;
-//        int              vertex_number;
-//        if (gmsh_file_format > 40)
-//          for (unsigned long vertex_per_entity = 0;
-//               vertex_per_entity < numNodes;
-//               ++vertex_per_entity)
-//            {
-//              in >> vertex_number;
-//              vertex_numbers.push_back(vertex_number);
-//            }
-//
-//        for (unsigned long vertex_per_entity = 0; vertex_per_entity < numNodes;
-//             ++vertex_per_entity, ++global_vertex)
-//          {
-//            int    vertex_number;
-//            double x[3];
-//
-//            // read vertex
-//            if (gmsh_file_format > 40)
-//              {
-//                vertex_number = vertex_numbers[vertex_per_entity];
-//                in >> x[0] >> x[1] >> x[2];
-//              }
-//            else
-//              in >> vertex_number >> x[0] >> x[1] >> x[2];
-//
-//            for (unsigned int d = 0; d < spacedim; ++d)
-//              vertices[global_vertex](d) = x[d];
-//            // store mapping
-//            vertex_indices[vertex_number] = global_vertex;
-//
-//            // ignore parametric coordinates
-//            if (parametric != 0)
-//              {
-//                double u = 0.;
-//                double v = 0.;
-//                in >> u >> v;
-//                (void)u;
-//                (void)v;
-//              }
-//          }
-//      }
-//    AssertDimension(global_vertex, n_vertices);
-//  }
-//
-//  // Assert we reached the end of the block
-//  in >> line;
-//  static const std::string end_nodes_marker[] = {"$ENDNOD", "$EndNodes"};
-//  AssertThrow(line == end_nodes_marker[gmsh_file_format == 10 ? 0 : 1],
-//              ExcInvalidGMSHInput(line));
-//
-//  // Now read in next bit
-//  in >> line;
-//  static const std::string begin_elements_marker[] = {"$ELM", "$Elements"};
-//  AssertThrow(line == begin_elements_marker[gmsh_file_format == 10 ? 0 : 1],
-//              ExcInvalidGMSHInput(line));
-//
-//  // now read the cell list
-//  if (gmsh_file_format > 40)
-//    {
-//      int min_node_tag;
-//      int max_node_tag;
-//      in >> n_entity_blocks >> n_cells >> min_node_tag >> max_node_tag;
-//    }
-//  else if (gmsh_file_format == 40)
-//    {
-//      in >> n_entity_blocks >> n_cells;
-//    }
-//  else
-//    {
-//      n_entity_blocks = 1;
-//      in >> n_cells;
-//    }
-//
-//  // set up array of cells and subcells (faces). In 1d, there is currently no
-//  // standard way in deal.II to pass boundary indicators attached to individual
-//  // vertices, so do this by hand via the boundary_ids_1d array
-//  std::vector<CellData<dim>>                 cells;
-//  SubCellData                                subcelldata;
-//  std::map<unsigned int, types::boundary_id> boundary_ids_1d;
-//
-//  {
-//    unsigned int global_cell = 0;
-//    for (int entity_block = 0; entity_block < n_entity_blocks; ++entity_block)
-//      {
-//        unsigned int  material_id;
-//        unsigned long numElements;
-//        int           cell_type;
-//
-//        if (gmsh_file_format < 40)
-//          {
-//            material_id = 0;
-//            cell_type   = 0;
-//            numElements = n_cells;
-//          }
-//        else if (gmsh_file_format == 40)
-//          {
-//            int tagEntity, dimEntity;
-//            in >> tagEntity >> dimEntity >> cell_type >> numElements;
-//            material_id = tag_maps[dimEntity][tagEntity];
-//          }
-//        else
-//          {
-//            // for gmsh_file_format 4.1 the order of tag and dim is reversed,
-//            int tagEntity, dimEntity;
-//            in >> dimEntity >> tagEntity >> cell_type >> numElements;
-//            material_id = tag_maps[dimEntity][tagEntity];
-//          }
-//
-//        for (unsigned int cell_per_entity = 0; cell_per_entity < numElements;
-//             ++cell_per_entity, ++global_cell)
-//          {
-//            // note that since in the input
-//            // file we found the number of
-//            // cells at the top, there
-//            // should still be input here,
-//            // so check this:
-//            AssertThrow(in, ExcIO());
-//
-//            unsigned int nod_num;
-//
-//            /*
-//              For file format version 1, the format of each cell is as follows:
-//                elm-number elm-type reg-phys reg-elem number-of-nodes
-//              node-number-list
-//
-//              However, for version 2, the format reads like this:
-//                elm-number elm-type number-of-tags < tag > ... node-number-list
-//
-//              For version 4, we have:
-//                tag(int) numVert(int) ...
-//
-//              In the following, we will ignore the element number (we simply
-//              enumerate them in the order in which we read them, and we will
-//              take reg-phys (version 1) or the first tag (version 2, if any tag
-//              is given at all) as material id. For version 4, we already read
-//              the material and the cell type in above.
-//            */
-//
-//            unsigned int elm_number = 0;
-//            if (gmsh_file_format < 40)
-//              {
-//                in >> elm_number // ELM-NUMBER
-//                  >> cell_type;  // ELM-TYPE
-//              }
-//
-//            if (gmsh_file_format < 20)
-//              {
-//                in >> material_id // REG-PHYS
-//                  >> dummy        // reg_elm
-//                  >> nod_num;
-//              }
-//            else if (gmsh_file_format < 40)
-//              {
-//                // read the tags; ignore all but the first one which we will
-//                // interpret as the material_id (for cells) or boundary_id
-//                // (for faces)
-//                unsigned int n_tags;
-//                in >> n_tags;
-//                if (n_tags > 0)
-//                  in >> material_id;
-//                else
-//                  material_id = 0;
-//
-//                for (unsigned int i = 1; i < n_tags; ++i)
-//                  in >> dummy;
-//
-//                nod_num = GeometryInfo<dim>::vertices_per_cell;
-//              }
-//            else
-//              {
-//                // ignore tag
-//                int tag;
-//                in >> tag;
-//                nod_num = GeometryInfo<dim>::vertices_per_cell;
-//              }
-//
-//
-//            /*       `ELM-TYPE'
-//                     defines the geometrical type of the N-th element:
-//                     `1'
-//                     Line (2 nodes, 1 edge).
-//
-//                     `3'
-//                     Quadrangle (4 nodes, 4 edges).
-//
-//                     `5'
-//                     Hexahedron (8 nodes, 12 edges, 6 faces).
-//
-//                     `15'
-//                     Point (1 node).
-//            */
-//
-//            if (((cell_type == 1) && (dim == 1)) ||
-//                ((cell_type == 3) && (dim == 2)) ||
-//                ((cell_type == 5) && (dim == 3)))
-//              // found a cell
-//              {
-//                AssertThrow(nod_num == GeometryInfo<dim>::vertices_per_cell,
-//                            ExcMessage(
-//                              "Number of nodes does not coincide with the "
-//                              "number required for this object"));
-//
-//                // allocate and read indices
-//                cells.emplace_back();
-//                for (const unsigned int i : GeometryInfo<dim>::vertex_indices())
-//                  in >> cells.back().vertices[i];
-//
-//                // to make sure that the cast won't fail
-//                Assert(material_id <=
-//                         std::numeric_limits<types::material_id>::max(),
-//                       ExcIndexRange(
-//                         material_id,
-//                         0,
-//                         std::numeric_limits<types::material_id>::max()));
-//                // we use only material_ids in the range from 0 to
-//                // numbers::invalid_material_id-1
-//                AssertIndexRange(material_id, numbers::invalid_material_id);
-//
-//                cells.back().material_id =
-//                  static_cast<types::material_id>(material_id);
-//
-//                // transform from ucd to
-//                // consecutive numbering
-//                for (const unsigned int i : GeometryInfo<dim>::vertex_indices())
-//                  {
-//                    AssertThrow(
-//                      vertex_indices.find(cells.back().vertices[i]) !=
-//                        vertex_indices.end(),
-//                      ExcInvalidVertexIndexGmsh(cell_per_entity,
-//                                                elm_number,
-//                                                cells.back().vertices[i]));
-//
-//                    // vertex with this index exists
-//                    cells.back().vertices[i] =
-//                      vertex_indices[cells.back().vertices[i]];
-//                  }
-//              }
-//            else if ((cell_type == 1) && ((dim == 2) || (dim == 3)))
-//              // boundary info
-//              {
-//                subcelldata.boundary_lines.emplace_back();
-//                in >> subcelldata.boundary_lines.back().vertices[0] >>
-//                  subcelldata.boundary_lines.back().vertices[1];
-//
-//                // to make sure that the cast won't fail
-//                Assert(material_id <=
-//                         std::numeric_limits<types::boundary_id>::max(),
-//                       ExcIndexRange(
-//                         material_id,
-//                         0,
-//                         std::numeric_limits<types::boundary_id>::max()));
-//                // we use only boundary_ids in the range from 0 to
-//                // numbers::internal_face_boundary_id-1
-//                AssertIndexRange(material_id,
-//                                 numbers::internal_face_boundary_id);
-//
-//                subcelldata.boundary_lines.back().boundary_id =
-//                  static_cast<types::boundary_id>(material_id);
-//
-//                // transform from ucd to
-//                // consecutive numbering
-//                for (unsigned int &vertex :
-//                     subcelldata.boundary_lines.back().vertices)
-//                  if (vertex_indices.find(vertex) != vertex_indices.end())
-//                    // vertex with this index exists
-//                    vertex = vertex_indices[vertex];
-//                  else
-//                    {
-//                      // no such vertex index
-//                      AssertThrow(false,
-//                                  ExcInvalidVertexIndex(cell_per_entity,
-//                                                        vertex));
-//                      vertex = numbers::invalid_unsigned_int;
-//                    }
-//              }
-//            else if ((cell_type == 3) && (dim == 3))
-//              // boundary info
-//              {
-//                subcelldata.boundary_quads.emplace_back();
-//                in >> subcelldata.boundary_quads.back().vertices[0] >>
-//                  subcelldata.boundary_quads.back().vertices[1] >>
-//                  subcelldata.boundary_quads.back().vertices[2] >>
-//                  subcelldata.boundary_quads.back().vertices[3];
-//
-//                // to make sure that the cast won't fail
-//                Assert(material_id <=
-//                         std::numeric_limits<types::boundary_id>::max(),
-//                       ExcIndexRange(
-//                         material_id,
-//                         0,
-//                         std::numeric_limits<types::boundary_id>::max()));
-//                // we use only boundary_ids in the range from 0 to
-//                // numbers::internal_face_boundary_id-1
-//                AssertIndexRange(material_id,
-//                                 numbers::internal_face_boundary_id);
-//
-//                subcelldata.boundary_quads.back().boundary_id =
-//                  static_cast<types::boundary_id>(material_id);
-//
-//                // transform from gmsh to
-//                // consecutive numbering
-//                for (unsigned int &vertex :
-//                     subcelldata.boundary_quads.back().vertices)
-//                  if (vertex_indices.find(vertex) != vertex_indices.end())
-//                    // vertex with this index exists
-//                    vertex = vertex_indices[vertex];
-//                  else
-//                    {
-//                      // no such vertex index
-//                      Assert(false,
-//                             ExcInvalidVertexIndex(cell_per_entity, vertex));
-//                      vertex = numbers::invalid_unsigned_int;
-//                    }
-//              }
-//            else if (cell_type == 15)
-//              {
-//                // read the indices of nodes given
-//                unsigned int node_index = 0;
-//                if (gmsh_file_format < 20)
-//                  {
-//                    for (unsigned int i = 0; i < nod_num; ++i)
-//                      in >> node_index;
-//                  }
-//                else
-//                  {
-//                    in >> node_index;
-//                  }
-//
-//                // we only care about boundary indicators assigned to individual
-//                // vertices in 1d (because otherwise the vertices are not faces)
-//                if (dim == 1)
-//                  boundary_ids_1d[vertex_indices[node_index]] = material_id;
-//              }
-//            else
-//              // cannot read this, so throw
-//              // an exception. treat
-//              // triangles and tetrahedra
-//              // specially since this
-//              // deserves a more explicit
-//              // error message
-//              {
-//                AssertThrow(cell_type != 2,
-//                            ExcMessage("Found triangles while reading a file "
-//                                       "in gmsh format. deal.II does not "
-//                                       "support triangles"));
-//                AssertThrow(cell_type != 11,
-//                            ExcMessage("Found tetrahedra while reading a file "
-//                                       "in gmsh format. deal.II does not "
-//                                       "support tetrahedra"));
-//
-//                AssertThrow(false, ExcGmshUnsupportedGeometry(cell_type));
-//              }
-//          }
-//      }
-//    AssertDimension(global_cell, n_cells);
-//  }
-//  // Assert we reached the end of the block
-//  in >> line;
-//  static const std::string end_elements_marker[] = {"$ENDELM", "$EndElements"};
-//  AssertThrow(line == end_elements_marker[gmsh_file_format == 10 ? 0 : 1],
-//              ExcInvalidGMSHInput(line));
-//
-//  // check that no forbidden arrays are used
-//  Assert(subcelldata.check_consistency(dim), ExcInternalError());
-//
-//  AssertThrow(in, ExcIO());
-//
-//  // check that we actually read some
-//  // cells.
-//  AssertThrow(cells.size() > 0, ExcGmshNoCellInformation());
-//
-//  // do some clean-up on
-//  // vertices...
-//  GridTools::delete_unused_vertices(vertices, cells, subcelldata);
-//  // ... and cells
-//  if (dim == spacedim)
-//    GridReordering<dim, spacedim>::invert_all_cells_of_negative_grid(vertices,
-//                                                                     cells);
-//  GridReordering<dim, spacedim>::reorder_cells(cells);
-//  tria->create_triangulation_compatibility(vertices, cells, subcelldata);
-//
-//  // in 1d, we also have to attach boundary ids to vertices, which does not
-//  // currently work through the call above
-//  if (dim == 1)
-//    assign_1d_boundary_ids(boundary_ids_1d, *tria);
-//}
 
 
 template <int dim, int spacedim>
 void
 GridIn<dim, spacedim>::read_msh(
-  std::istream &                                        in,
+  std::istream & in,
   std::vector<std::vector<Point<spacedim>>> &support_points)
 {
   Assert(tria != nullptr, ExcNoTriangulationSelected());
@@ -2785,6 +2167,9 @@ GridIn<dim, spacedim>::read_msh(
                      `10'
                      quadratic Quadrangle (9 nodes, 4 edges).
 
+                     `12'
+                     quadratic Hexahedron (27 nodes, 12 edges, 6 faces).
+
                      `15'
                      Point (1 node).
             */
@@ -3001,10 +2386,6 @@ GridIn<dim, spacedim>::read_msh(
                     cells.back().vertices[i] =
                       vertex_indices[cells.back().vertices[i]];
                   }
-
-                // this is just some simple renumbering because of the different
-                // ways of counting. (staring from 1 in the input file vs.
-                // starting from 0 in the code
 
                 // number of support points is total total number of vertices per
                 // cell minus the actual vertices, i.e. 5 for quad9 and 19 for hex27
@@ -4273,90 +3654,47 @@ GridIn<dim, spacedim>::skip_comment_lines(std::istream &in,
   skip_empty_lines(in);
 }
 
-template <int dim, int spacedim>
-void
-GridIn<dim, spacedim>::reorder_support_points(
-  std::vector<Point<spacedim>> &points)
-{
-  // New way of handling the ordering:
-  // Is there a fixed mapping between gmsh input file
-  // and deal.II ordering of vertices? Maybe...needs
-  // further checks, especially in 3d
+//namespace internal
+//{
+  template <int dim, int spacedim>
+  void
+  GridIn<dim, spacedim>::reorder_support_points(
+    std::vector<Point<spacedim>> &points)
+  {
+	// New way of handling the ordering:
+	// Is there a fixed mapping between gmsh input file
+	// and deal.II ordering of vertices? Maybe...needs
+	// further checks, especially in 3d
 
-  // This would be the reordering of the points into the deall.II
-  // order. Example: mapping[0] = 2, i.e. the first entry of
-  // points should be the 6th (the 4 vertices + 2), the
-  // second entry the 5th (4 vertices + 1)
+	// This would be the reordering of the points into the deall.II
+	// order. Example: mapping[0] = 2, i.e. the first entry of
+	// points should be the 6th (the 4 vertices + 2), the
+	// second entry the 5th (4 vertices + 1)
 
-  // mapping depends on dimension
-  // does mapping also depend on if geometry is in x-y-plane,
-  // x-z-plane or y-z-plane?
-  std::vector<unsigned int> mapping(points.size());
-  if (points.size() == 5)
-    mapping = {2, 1, 3, 0, 4};
-  else if (points.size() == 19)
-    {
-	  mapping = {3, 10, 0, 11, 1, 7, 5, 4, 2, 8, 9, 6, 15, 16, 12, 13, 17, 14, 18};
-    }
-  else
-    {
-      Assert(false, ExcNotImplemented());
-    }
+	// mapping depends on dimension
+	// does mapping also depend on if geometry is in x-y-plane,
+	// x-z-plane or y-z-plane?
+	std::vector<unsigned int> mapping(points.size());
 
-  // vector holding the sorted points
-  std::vector<Point<spacedim>> sorted_points(points.size());
+	if (points.size() == 5)
+		mapping = {2, 1, 3, 0, 4};
+	else if (points.size() == 19)
+		mapping = {3, 10, 0, 11, 1, 7, 5, 4, 2, 8, 9, 6, 15, 16, 12, 13, 17, 14, 18};
+	else
+		Assert(false, ExcNotImplemented());
 
-  // now loop over the number of entries in points and
-  // distribute to the correct position in sorted_points
-  for (unsigned int i = 0; i < points.size(); ++i)
-    sorted_points[mapping[i]] = points[i];
+	// vector holding the sorted points
+	std::vector<Point<spacedim>> sorted_points(points.size());
 
-  // and now copy the sorted points back into points
-  points = sorted_points;
+	// now loop over the number of entries in points and
+	// distribute to the correct position in sorted_points
+	for (unsigned int i = 0; i < points.size(); ++i)
+		sorted_points[mapping[i]] = points[i];
 
-  // Reorder the support points to match the deal.II numbering scheme
-  // first x, then y, then z.
-  // First, find lowest x value, then highest x value.
-  // Then lowest y value and then highest y value.
-  // Then lowest z value and then hihgest z value.
-  // At the end there should be one point left which
-  // is the central point.
-
-  //	// loop over all directions
-  //	for (unsigned int direction = 0; direction < dim; ++direction)
-  //	{
-  //		// initialize high and low with some unreasonable numbers
-  //		Point<spacedim> high(-1000, -1000, -1000);
-  //		Point<spacedim> low(1000, 1000, 1000);
-  //		// loop over all points to find high and low in each direction
-  //		for (auto& point : points)
-  //		{
-  //			if(point(direction) > high(direction))
-  //			{
-  //				high = point;
-  //			}
-  //			if(point(direction) < low(direction))
-  //			{
-  //				low = point;
-  //			}
-  //		}
-  //		std::cout << "Highest point in direction " << direction << " " <<
-  //high(0) << " "  << high(1) << " " << high(2) << std::endl; 		std::cout <<
-  //"Lowest point in direction " << direction << " " << low(0) << " "  << low(1)
-  //<< " " << low(2) << std::endl;
-  //
-  //		// store the just found points in sorted points
-  //		sorted_points[(direction * 2)] = low;
-  //		sorted_points[(direction * 2) + 1] = high;
-  //	}
-  //
-  //	// add central point at the end
-  //	sorted_points.back() = points.back();
-
-  //	// and now copy the sorted points back into points
-  //	points = sorted_points;
-}
-
+	// and now copy the sorted points back into points
+	points = sorted_points;
+  }
+//} // namespace internal
 
 
 template <int dim, int spacedim>

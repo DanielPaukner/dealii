@@ -488,8 +488,8 @@ public:
   read_xda(std::istream &in);
 
   /**
-   * Read grid data from an msh file, either version 1 or version 2 of that
-   * file format. The %Gmsh formats are documented at
+   * Read grid data from an msh file with linear elements, either version 1
+   * or version 2 of that file format. The %Gmsh formats are documented at
    * http://www.gmsh.info/.
    *
    * @note The input function of deal.II does not distinguish between newline
@@ -499,6 +499,23 @@ public:
   void
   read_msh(std::istream &in);
 
+  /**
+   * Read grid data from a msh file with quadratic elements (Quadrangels with
+   * 9 nodes, i.e. 4 vertices plus 5 support points or Hexahedron with 27
+   * nodes, i.e. 8 vertices plus 19 support points). Either version 1 or
+   * version 2 of that file format are suppprted. The %Gmsh formats are
+   * documented at http://www.gmsh.info/.
+   *
+   * @param in The file to read from
+   * @param support_points Vector containing the support points of each cell
+   *
+   * The vector @p support_points can then be used as input to create a
+   * quadratic mapping, MappingQ2.
+   *
+   * @note The input function of deal.II does not distinguish between newline
+   * and other whitespace. Therefore, deal.II will be able to read files in a
+   * slightly more general format than %Gmsh.
+   */
   void
   read_msh(std::istream &in,
 		   std::vector<std::vector<Point<spacedim>>> &support_points);

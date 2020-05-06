@@ -21,8 +21,6 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_manifold.h>
-#include <deal.II/fe/mapping_quad9.h>
-
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/grid/tria.h>
 // testing
@@ -31,6 +29,7 @@
 #include <istream>
 #include <string>
 
+#include "../../include/deal.II/fe/mapping_q2.h"
 #include "../tests.h"
 
 template <int dim, int spacedim = dim>
@@ -58,13 +57,13 @@ check_file(const std::string file_name)
         AssertThrow(false, ExcNotImplemented());
     }
 
-  // testing to see if ordering of the nodes is correct
+  // testing to see if ordering of the nodes is correct for hex27
   GridOut go;
   std::ofstream output_file("output.vtk");
   GridOut().write_vtk(tria, output_file);
 
   MappingQGeneric<dim, spacedim> mapping_1(1);
-  MappingQuad9<dim, spacedim>    mapping_2(support_points);
+  MappingQ2<dim, spacedim>    mapping_2(support_points);
 
   QGaussLobatto<dim> quad_1(2);
   QGaussLobatto<dim> quad_2(3);
