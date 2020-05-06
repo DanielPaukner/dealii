@@ -972,350 +972,6 @@ GridIn<dim, spacedim>::read_ucd(std::istream &in,
   tria->create_triangulation_compatibility(vertices, cells, subcelldata);
 }
 
-template <int dim, int spacedim>
-void
-GridIn<dim, spacedim>::read_ucd(
-  std::istream &                                        in,
-  std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
-  const bool apply_all_indicators_to_manifolds)
-{
-  // first, just copy everthing from standard read_ucd()
-
-  Assert(tria != nullptr, ExcNoTriangulationSelected());
-  AssertThrow(in, ExcIO());
-
-  // skip comments at start of file
-  skip_comment_lines(in, '#');
-
-
-  unsigned int n_vertices;
-  unsigned int n_cells;
-  int          dummy;
-
-  in >> n_vertices >> n_cells >> dummy // number of data vectors
-    >> dummy                           // cell data
-    >> dummy;                          // model data
-  AssertThrow(in, ExcIO());
-
-  // set up array of vertices
-  std::vector<Point<spacedim>> vertices(n_vertices);
-  // set up mapping between numbering
-  // in ucd-file (key) and in the
-  // vertices vector
-  std::map<int, int> vertex_indices;
-
-  for (unsigned int vertex = 0; vertex < n_vertices; ++vertex)
-    {
-      int    vertex_number;
-      double x[3];
-
-      // read vertex
-      AssertThrow(in, ExcIO());
-      in >> vertex_number >> x[0] >> x[1] >> x[2];
-
-      // store vertex
-      for (unsigned int d = 0; d < spacedim; ++d)
-        vertices[vertex](d) = x[d];
-      // store mapping; note that
-      // vertices_indices[i] is automatically
-      // created upon first usage
-      vertex_indices[vertex_number] = vertex;
-    }
-
-  // set up array of cells
-  std::vector<CellData<dim>> cells;
-  SubCellData                subcelldata;
-
-  for (unsigned int cell = 0; cell < n_cells; ++cell)
-    {
-      // note that since in the input
-      // file we found the number of
-      // cells at the top, there
-      // should still be input here,
-      // so check this:
-      AssertThrow(in, ExcIO());
-
-      std::string cell_type;
-
-      // we use an unsigned int because we
-      // fill this variable through an read-in process
-      unsigned int material_id;
-
-      in >> dummy // cell number
-        >> material_id;
-      in >> cell_type;
-
-      if (((cell_type == "line") && (dim == 1)) ||
-          ((cell_type == "quad") && (dim == 2)) ||
-          ((cell_type == "hex") && (dim == 3)))
-        // found a cell
-        {
-          // allocate and read indices
-          cells.emplace_back();
-          for (unsigned int i = 0; i < GeometryInfo<dim>::vertices_per_cell;
-               ++i)
-            in >> cells.back().vertices[i];
-
-          // to make sure that the cast won't fail
-          Assert(material_id <= std::numeric_limits<types::material_id>::max(),
-                 ExcIndexRange(material_id,
-                               0,
-                               std::numeric_limits<types::material_id>::max()));
-          // we use only material_ids in the range from 0 to
-          // numbers::invalid_material_id-1
-          Assert(material_id < numbers::invalid_material_id,
-                 ExcIndexRange(material_id, 0, numbers::invalid_material_id));
-
-          if (apply_all_indicators_to_manifolds)
-            cells.back().manifold_id =
-              static_cast<types::manifold_id>(material_id);
-          cells.back().material_id =
-            static_cast<types::material_id>(material_id);
-
-          // transform from ucd to
-          // consecutive numbering
-          for (unsigned int i = 0; i < GeometryInfo<dim>::vertices_per_cell;
-               ++i)
-            if (vertex_indices.find(cells.back().vertices[i]) !=
-                vertex_indices.end())
-              // vertex with this index exists
-              cells.back().vertices[i] =
-                vertex_indices[cells.back().vertices[i]];
-            else
-              {
-                // no such vertex index
-                AssertThrow(false,
-                            ExcInvalidVertexIndex(cell,
-                                                  cells.back().vertices[i]));
-
-                cells.back().vertices[i] = numbers::invalid_unsigned_int;
-              }
-        }
-      else if ((cell_type == "quad9") && (dim == 2))
-        {
-          // temporary vector to store the indices of all the vertices
-          // belonging to the current cell
-          std::vector<int> temp_vertex_indices;
-          // read all vertices of that cell
-          int temp_index = 0;
-          // allocate and read indices
-          cells.emplace_back();
-          for (unsigned int i = 0; i < 9; ++i)
-            {
-              in >> temp_index;
-              temp_vertex_indices.emplace_back(temp_index);
-
-              if (i < GeometryInfo<dim>::vertices_per_cell)
-                cells.back().vertices[i] = temp_index;
-            }
-
-          // debug output
-          for (auto &vertex : temp_vertex_indices)
-            std::cout << vertex << std::endl;
-
-          // debug output, check if cells has the right vertices
-          // not all 9 but just the first 4
-          for (unsigned int i = 0; i < GeometryInfo<dim>::vertices_per_cell;
-               ++i)
-            std::cout << cells.back().vertices[i] << std::endl;
-
-          // now we need to find the actual vertices, i.e. the points, in the
-          // vertices vector which holds ALL vertices.
-          // To do this, we use the index we stored in temp_vertex_indices and
-          // pick the corresponding vertex from vertices. However, be aware that
-          // this is shifted by 1, so we need to correct that (usual c count).
-
-          // first, create temporary vector with all the points
-          std::vector<Point<spacedim>> temp_points;
-
-          // now go through temp_vertex_indices, pick the corresponding point
-          // from vertices, and store point in temp_points
-          for (auto &vertex : temp_vertex_indices)
-            {
-              temp_points.emplace_back(vertices[vertex - 1]);
-            }
-
-          // and now store temp_points with the corresponding cell in map_in
-          map_in.emplace(cell, temp_points);
-
-
-
-          // proceed normally with the cells
-          // to make sure that the cast won't fail
-          Assert(material_id <= std::numeric_limits<types::material_id>::max(),
-                 ExcIndexRange(material_id,
-                               0,
-                               std::numeric_limits<types::material_id>::max()));
-          // we use only material_ids in the range from 0 to
-          // numbers::invalid_material_id-1
-          Assert(material_id < numbers::invalid_material_id,
-                 ExcIndexRange(material_id, 0, numbers::invalid_material_id));
-
-          if (apply_all_indicators_to_manifolds)
-            cells.back().manifold_id =
-              static_cast<types::manifold_id>(material_id);
-          cells.back().material_id =
-            static_cast<types::material_id>(material_id);
-
-          // transform from ucd to
-          // consecutive numbering
-          for (unsigned int i = 0; i < GeometryInfo<dim>::vertices_per_cell;
-               ++i)
-            if (vertex_indices.find(cells.back().vertices[i]) !=
-                vertex_indices.end())
-              // vertex with this index exists
-              cells.back().vertices[i] =
-                vertex_indices[cells.back().vertices[i]];
-            else
-              {
-                // no such vertex index
-                AssertThrow(false,
-                            ExcInvalidVertexIndex(cell,
-                                                  cells.back().vertices[i]));
-
-                cells.back().vertices[i] = numbers::invalid_unsigned_int;
-              }
-
-          // Debug
-          //	    	  throw std::runtime_error("found quad9 cell");
-        }
-      else if ((cell_type == "line") && ((dim == 2) || (dim == 3)))
-        // boundary info
-        {
-          subcelldata.boundary_lines.emplace_back();
-          in >> subcelldata.boundary_lines.back().vertices[0] >>
-            subcelldata.boundary_lines.back().vertices[1];
-
-          // to make sure that the cast won't fail
-          Assert(material_id <= std::numeric_limits<types::boundary_id>::max(),
-                 ExcIndexRange(material_id,
-                               0,
-                               std::numeric_limits<types::boundary_id>::max()));
-          // we use only boundary_ids in the range from 0 to
-          // numbers::internal_face_boundary_id-1
-          Assert(material_id < numbers::internal_face_boundary_id,
-                 ExcIndexRange(material_id,
-                               0,
-                               numbers::internal_face_boundary_id));
-
-          // Make sure to set both manifold id and boundary id appropriately in
-          // both cases:
-          // numbers::internal_face_boundary_id and numbers::flat_manifold_id
-          // are ignored in Triangulation::create_triangulation.
-          if (apply_all_indicators_to_manifolds)
-            {
-              subcelldata.boundary_lines.back().boundary_id =
-                numbers::internal_face_boundary_id;
-              subcelldata.boundary_lines.back().manifold_id =
-                static_cast<types::manifold_id>(material_id);
-            }
-          else
-            {
-              subcelldata.boundary_lines.back().boundary_id =
-                static_cast<types::boundary_id>(material_id);
-              subcelldata.boundary_lines.back().manifold_id =
-                numbers::flat_manifold_id;
-            }
-
-          // transform from ucd to
-          // consecutive numbering
-          for (unsigned int &vertex :
-               subcelldata.boundary_lines.back().vertices)
-            if (vertex_indices.find(vertex) != vertex_indices.end())
-              // vertex with this index exists
-              vertex = vertex_indices[vertex];
-            else
-              {
-                // no such vertex index
-                AssertThrow(false, ExcInvalidVertexIndex(cell, vertex));
-                vertex = numbers::invalid_unsigned_int;
-              }
-        }
-      else if ((cell_type == "quad") && (dim == 3))
-        // boundary info
-        {
-          subcelldata.boundary_quads.emplace_back();
-          in >> subcelldata.boundary_quads.back().vertices[0] >>
-            subcelldata.boundary_quads.back().vertices[1] >>
-            subcelldata.boundary_quads.back().vertices[2] >>
-            subcelldata.boundary_quads.back().vertices[3];
-
-          // to make sure that the cast won't fail
-          Assert(material_id <= std::numeric_limits<types::boundary_id>::max(),
-                 ExcIndexRange(material_id,
-                               0,
-                               std::numeric_limits<types::boundary_id>::max()));
-          // we use only boundary_ids in the range from 0 to
-          // numbers::internal_face_boundary_id-1
-          Assert(material_id < numbers::internal_face_boundary_id,
-                 ExcIndexRange(material_id,
-                               0,
-                               numbers::internal_face_boundary_id));
-
-          // Make sure to set both manifold id and boundary id appropriately in
-          // both cases:
-          // numbers::internal_face_boundary_id and numbers::flat_manifold_id
-          // are ignored in Triangulation::create_triangulation.
-          if (apply_all_indicators_to_manifolds)
-            {
-              subcelldata.boundary_quads.back().boundary_id =
-                numbers::internal_face_boundary_id;
-              subcelldata.boundary_quads.back().manifold_id =
-                static_cast<types::manifold_id>(material_id);
-            }
-          else
-            {
-              subcelldata.boundary_quads.back().boundary_id =
-                static_cast<types::boundary_id>(material_id);
-              subcelldata.boundary_quads.back().manifold_id =
-                numbers::flat_manifold_id;
-            }
-
-          // transform from ucd to
-          // consecutive numbering
-          for (unsigned int &vertex :
-               subcelldata.boundary_quads.back().vertices)
-            if (vertex_indices.find(vertex) != vertex_indices.end())
-              // vertex with this index exists
-              vertex = vertex_indices[vertex];
-            else
-              {
-                // no such vertex index
-                Assert(false, ExcInvalidVertexIndex(cell, vertex));
-                vertex = numbers::invalid_unsigned_int;
-              }
-        }
-      else
-        // cannot read this
-        AssertThrow(false, ExcUnknownIdentifier(cell_type));
-    }
-
-
-  // check that no forbidden arrays are used
-  Assert(subcelldata.check_consistency(dim), ExcInternalError());
-
-  AssertThrow(in, ExcIO());
-
-  // do some clean-up on vertices...
-  GridTools::delete_unused_vertices(vertices, cells, subcelldata);
-  // ... and cells
-  if (dim == spacedim)
-    GridReordering<dim, spacedim>::invert_all_cells_of_negative_grid(vertices,
-                                                                     cells);
-  GridReordering<dim, spacedim>::reorder_cells(cells);
-
-  // debug output
-  // check how vertices are ordered after reordering
-  std::cout << "Vertices after reordering: " << std::endl;
-  for (auto &vertex : vertices)
-    {
-      std::cout << vertex(0) << " " << vertex(1) << " " << vertex(2)
-                << std::endl;
-    }
-
-  tria->create_triangulation_compatibility(vertices, cells, subcelldata);
-}
-
 namespace
 {
   template <int dim, int spacedim>
@@ -1729,13 +1385,12 @@ GridIn<3>::read_xda(std::istream &in)
 }
 
 
-
 template <int dim, int spacedim>
 void
 GridIn<dim, spacedim>::read_msh(std::istream &in)
 {
-	std::vector<std::vector<Point<spacedim>>> dummy;
-	read_msh(in, dummy);
+  std::vector<std::vector<Point<spacedim>>> dummy;
+  read_msh(in, dummy);
 }
 
 
@@ -2315,12 +1970,9 @@ GridIn<dim, spacedim>::read_msh(
                 if (dim == 1)
                   boundary_ids_1d[vertex_indices[node_index]] = material_id;
               }
-            // quad9 cells
             else if ((cell_type == 10 && dim == 2) ||
             		 (cell_type == 12 && dim == 3))
               {
-                // Is this assert necessary? If GMSH version is 2.0 (or 20)
-                // nod_num is set to GeometryInfo<dim>::vertices_per_cell anyway
                 AssertThrow(nod_num == GeometryInfo<dim>::vertices_per_cell,
                             ExcMessage(
                               "Number of nodes does not coincide with the "
@@ -2418,15 +2070,6 @@ GridIn<dim, spacedim>::read_msh(
 
                 // reorder the points to match the deal.II ordering scheme
                 reorder_support_points(temp_points);
-
-//                std::cout << "temp_points after reordering..." << std::endl;
-//                // Check if the correct points are in temp_points
-//                for (auto &point : temp_points)
-//                  {
-//                    for (unsigned int i = 0; i < spacedim; ++i)
-//                      std::cout << point(i) << " ";
-//                    std::cout << std::endl;
-//                  }
 
                 // Now store the temp_points vector which contains the support
                 // points of the current cell in the overall support points
@@ -3654,11 +3297,11 @@ GridIn<dim, spacedim>::skip_comment_lines(std::istream &in,
   skip_empty_lines(in);
 }
 
-//namespace internal
-//{
+namespace
+{
   template <int dim, int spacedim>
   void
-  GridIn<dim, spacedim>::reorder_support_points(
+  reorder_support_points(
     std::vector<Point<spacedim>> &points)
   {
 	// New way of handling the ordering:
@@ -3694,7 +3337,7 @@ GridIn<dim, spacedim>::skip_comment_lines(std::istream &in,
 	// and now copy the sorted points back into points
 	points = sorted_points;
   }
-//} // namespace internal
+} namespace
 
 
 template <int dim, int spacedim>

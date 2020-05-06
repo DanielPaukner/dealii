@@ -29,10 +29,18 @@ DEAL_II_NAMESPACE_OPEN
 
 
 /**
- * Implementation of a $d$-linear mapping from the reference cell to a general
- * quadrilateral/hexahedron.
+ * Implementation of a quadratic mapping from the reference cell to a general
+ * quadrilateral/hexahedron given 9-noded quadrangles or 27-noded hexahedron.
  *
- * The mapping implemented by this class maps the reference (unit) cell to a
+ * The mapping implemented by this class is similar to creating a mapping of
+ * the type MappingQ(2) or MappingQGeneric(2). However, the difference is that
+ * this mapping gets the necessary support points from the input file read
+ * with read_msh() instead of computing them.
+ *
+ * @note This class is does not support mesh refinement yet. Also, only GMSH
+ * input files are supported.
+ *
+ * maps the reference (unit) cell to a
  * general grid cell with straight lines in $d$ dimensions. (Note, however,
  * that in 3D the <i>faces</i> of a general, trilinearly mapped cell may be
  * curved, even if the edges are not). This is the standard mapping used for
@@ -46,11 +54,7 @@ DEAL_II_NAMESPACE_OPEN
  * FE_Q of polynomial degree 1. Therefore, coupling these two yields an
  * isoparametric element.
  *
- * @note This class is, in all reality, nothing more than a different name for
- * calling MappingQGeneric with a polynomial degree of one as argument.
- *
- * @author Guido Kanschat, 2000, 2001; Ralf Hartmann, 2000, 2001, 2005,
- * Wolfgang Bangerth, 2015
+ * @author
  */
 
 template <int dim, int spacedim = dim>
@@ -60,7 +64,9 @@ public:
   /**
    * Constructor.
    *
-   * @param[in]
+   * @param[in] support_points A vector of a vector of points that stores the
+   * the support points associated with a cell. Note that only the support
+   * points are stored in this vector, not the vertices.
    */
   MappingQ2(std::vector<std::vector<Point<spacedim>>> &support_points);
 
@@ -73,11 +79,20 @@ public:
 
 
 private:
+  /**
+   * Returns the support points necessary for the quadratic mapping. However,
+   * instead of computing the support points, this function just returns the
+   * support points stored in the support_points vector corresponding to the
+   * current cell.
+   */
   virtual std::vector<Point<spacedim>>
   compute_mapping_support_points(
     const typename Triangulation<dim, spacedim>::cell_iterator &cell)
     const override;
 
+  /**
+   * Vector with the support points read from the mesh file.
+   */
   std::vector<std::vector<Point<spacedim>>> support_points;
 };
 

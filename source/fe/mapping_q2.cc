@@ -66,8 +66,8 @@ std::vector<Point<spacedim>>
 MappingQ2<dim, spacedim>::compute_mapping_support_points(
   const typename Triangulation<dim, spacedim>::cell_iterator &cell) const
 {
-  // check if level is 0
-	Assert(cell->level() != 0, ExcInternalError());
+  // check if level is 0, since currently, no mesh refinement is supported
+  AssertDimension(cell->level(), 0);
 
   // number of total points is 9 (3^2) for quad9 element
   // and 27 (3^3) for hex27 element
