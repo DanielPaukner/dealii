@@ -427,11 +427,6 @@ public:
   read_ucd(std::istream &in,
            const bool    apply_all_indicators_to_manifolds = false);
 
-  void
-  read_ucd(std::istream &                                        in,
-           std::map<unsigned int, std::vector<Point<spacedim>>> &map_in,
-           const bool apply_all_indicators_to_manifolds = false);
-
   /**
    * Read grid data from an Abaqus file. Numerical and constitutive data is
    * ignored. As in the case of the ucd file format, it is possible to use
@@ -500,21 +495,16 @@ public:
   read_msh(std::istream &in);
 
   /**
-   * Read grid data from a msh file with quadratic elements (Quadrangels with
-   * 9 nodes, i.e. 4 vertices plus 5 support points or Hexahedron with 27
-   * nodes, i.e. 8 vertices plus 19 support points). Either version 1 or
-   * version 2 of that file format are suppprted. The %Gmsh formats are
-   * documented at http://www.gmsh.info/.
+   * Same as before but with additional argument @p support_points. This
+   * function reads grid data from a msh file with quadratic elements
+   * (Quadrangels with 9 nodes, i.e. 4 vertices plus 5 support points or
+   * Hexahedra with 27 nodes, i.e. 8 vertices plus 19 support points) and
+   * stores the location of the support points for each cell in the vector
+   * @p support_points. This vector can then be used as an input to create
+   * a quadratic mapping, MappingQ2. See the MappingQ2 class for more details.
    *
    * @param in The file to read from
-   * @param support_points Vector containing the support points of each cell
-   *
-   * The vector @p support_points can then be used as input to create a
-   * quadratic mapping, MappingQ2.
-   *
-   * @note The input function of deal.II does not distinguish between newline
-   * and other whitespace. Therefore, deal.II will be able to read files in a
-   * slightly more general format than %Gmsh.
+   * @param support_points Vector storing the support points of each cell
    */
   void
   read_msh(std::istream &in,
@@ -742,9 +732,6 @@ private:
   static void
   skip_comment_lines(std::istream &in, const char comment_start);
 
-
-  static void
-  reorder_support_points(std::vector<Point<spacedim>> &points);
   /**
    * This function does the nasty work (due to very lax conventions and
    * different versions of the tecplot format) of extracting the important

@@ -30,31 +30,18 @@ DEAL_II_NAMESPACE_OPEN
 
 /**
  * Implementation of a quadratic mapping from the reference cell to a general
- * quadrilateral/hexahedron given 9-noded quadrangles or 27-noded hexahedron.
+ * quadrilateral/hexahedron given 9-noded quadrangles or 27-noded hexahedra.
  *
  * The mapping implemented by this class is similar to creating a mapping of
  * the type MappingQ(2) or MappingQGeneric(2). However, the difference is that
  * this mapping gets the necessary support points from the input file read
- * with read_msh() instead of computing them.
+ * with read_msh() instead of computing them or getting them from a manifold.
  *
- * @note This class is does not support mesh refinement yet. Also, only GMSH
- * input files are supported.
+ * @note This class is does not support mesh refinement yet. Also, only Gmsh
+ * input files can currently be read and processed to give the necessary
+ * vector of support points.
  *
- * maps the reference (unit) cell to a
- * general grid cell with straight lines in $d$ dimensions. (Note, however,
- * that in 3D the <i>faces</i> of a general, trilinearly mapped cell may be
- * curved, even if the edges are not). This is the standard mapping used for
- * polyhedral domains. It is also the mapping used throughout deal.II for many
- * functions that come in two variants, one that allows to pass a mapping
- * argument explicitly and one that simply falls back to the MappingQ1 class
- * declared here. (Or, in fact, to an object of kind MappingQGeneric(1), which
- * implements exactly the functionality of this class.)
- *
- * The shape functions for this mapping are the same as for the finite element
- * FE_Q of polynomial degree 1. Therefore, coupling these two yields an
- * isoparametric element.
- *
- * @author
+ * @author Daniel Paukner, Peter Munch 2020
  */
 
 template <int dim, int spacedim = dim>
@@ -64,9 +51,10 @@ public:
   /**
    * Constructor.
    *
-   * @param[in] support_points A vector of a vector of points that stores the
-   * the support points associated with a cell. Note that only the support
-   * points are stored in this vector, not the vertices.
+   * @param[in] support_points
+   * A vector of a vector of points that stores the support points associated
+   * with a cell. Note that only the support points are stored in this vector,
+   * not the vertices.
    */
   MappingQ2(std::vector<std::vector<Point<spacedim>>> &support_points);
 

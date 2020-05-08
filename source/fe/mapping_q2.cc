@@ -53,12 +53,15 @@ MappingQ2<dim, spacedim>::MappingQ2(
 {
 }
 
+
+
 template <int dim, int spacedim>
 std::unique_ptr<Mapping<dim, spacedim>>
 MappingQ2<dim, spacedim>::clone() const
 {
   return std_cxx14::make_unique<MappingQ2<dim, spacedim>>(*this);
 }
+
 
 
 template <int dim, int spacedim>
@@ -73,20 +76,17 @@ MappingQ2<dim, spacedim>::compute_mapping_support_points(
   // and 27 (3^3) for hex27 element
   const unsigned int num_points = Utilities::pow(3, dim);
 
+  // vector that will hold the vertices plus support points
   std::vector<Point<spacedim>> result(num_points);
 
+  // get vertices of the current cell and add to results
   const auto &vertices = this->get_vertices(cell);
-
   for (const unsigned int i : GeometryInfo<dim>::vertex_indices())
     result[i] = vertices[i];
 
-  // get vector with points for current cell
+  // get vector with support points for current cell and add to results
   const std::vector<Point<spacedim>> &sup_points =
     support_points[cell->active_cell_index()];
-
-  // just copy the points you need
-  // this is done to get the correct ordering of the first
-  // four vertice which make up the actual cell in the triangulation
   for (unsigned int i = 0;
        i < num_points - GeometryInfo<dim>::vertices_per_cell; ++i)
     result[i + GeometryInfo<dim>::vertices_per_cell] = sup_points[i];
@@ -95,8 +95,10 @@ MappingQ2<dim, spacedim>::compute_mapping_support_points(
 }
 
 
+
 //--------------------------- Explicit instantiations -----------------------
 #include "mapping_q2.inst"
+
 
 
 DEAL_II_NAMESPACE_CLOSE
